@@ -5,7 +5,8 @@
  - 健康检查
  - 整合gin
  - 重启服务的更新机智，而不是create
- - http 和 grpc切换  http2 ??
+ - 认证框架
+ - http 和 grpc切换  http2，什么时候用http，网关入口流量是grpc还是http，在哪里做的转换
 
 # 安装consul
 
