@@ -3,15 +3,14 @@ module day01
 go 1.20
 
 require (
+	github.com/go-micro/plugins/v4/registry/consul v1.2.0
 	go-micro.dev/v4 v4.10.2
-	google.golang.org/genproto v0.0.0-20230629202037-9506855d4529
 	google.golang.org/protobuf v1.30.0
 )
 
 require (
 	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da // indirect
 	github.com/fatih/color v1.9.0 // indirect
-	github.com/go-micro/plugins/v4/registry/consul v1.2.0 // indirect
 	github.com/hashicorp/consul/api v1.9.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
 	github.com/hashicorp/go-hclog v0.12.0 // indirect
