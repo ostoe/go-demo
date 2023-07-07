@@ -5,6 +5,7 @@ import (
 	greeter "day01/proto"
 	"fmt"
 	"log"
+	"net"
 	"strconv"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"go-micro.dev/v4"
 	"go-micro.dev/v4/logger"
 	"go-micro.dev/v4/registry"
+	"go-micro.dev/v4/server"
+	"go-micro.dev/v4/transport"
 	// proto "google.golang.org/protobuf/proto"
 )
 
@@ -20,28 +23,56 @@ type Greeter struct{}
 
 func (g *Greeter) Hello(ctx context.Context, req *greeter.Request, rsp *greeter.Response) error {
 	fmt.Println("he", req.GetName())
-	rsp.Msg = "Hello " + req.Name
+	rsp.Msg = "Hello1 " + req.Name
 	return nil
 }
 
+type netListener struct{}
+
 const (
-	PORT int64 = 8080
+	PORT int64 = 8081
+	// rawListener WrapperListener = nil
 )
 
 func main() {
 
 	reg := consul.NewRegistry(func(o *registry.Options) {
 		o.Addrs = []string{"127.0.0.1:8500"} // consul服务注册服务发现地址
-		o.Timeout = time.Second * 5
+		o.Timeout = time.Second * 10
 	})
+	// 定制监听ipv4的地址
+	rawListener, err := net.Listen("tcp4", ":"+strconv.FormatInt(PORT, 10))
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	ctx := context.WithValue(context.Background(), netListener{}, rawListener)
 
+	// micro这个库有两层option，第一层是service本身的，service {opts[], once}
+	// 第二层在service.opts.server.opts里面,server哪来的呢？都是newOptions函数自动生成的默认，
+	// 然后再根据传入的参数改server的参数
 	service := micro.NewService(
+		// service.opts.Context!
+		// micro.Context(ctx),
+		// 每一个micro.xxxx返回都是一个符合Options接口的函数
 		micro.Name("GreeterService"),
 		micro.Version("v0.0.1"),
-		micro.Address("0.0.0.0:"+strconv.FormatInt(PORT, 10)),
+		micro.Address(":"+strconv.FormatInt(PORT, 10)),
 		micro.Registry(reg),
+		// service .opts.Server.opts.Context
+
+		micro.AddListenOption(func(o *server.Options) {
+			o.ListenOptions = append(o.ListenOptions,
+				func(lo *transport.ListenOptions) { lo.Context = ctx },
+			)
+		}),
+		micro.AddListenOption(func(o *server.Options) {
+			o.Context = ctx
+		}),
+		// micro.AddListenOption(server.Advertise("127.0.0.0")),
 		// micro.RegisterHandler()
 	)
+
+	// 这时候 s.opts 就有值了，但是里面的值都是函数，opts的值已经安装传入都改一遍了。
 
 	// 配置中心
 	// consulConfig, err := config.GetConsulConfig()

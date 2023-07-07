@@ -30,10 +30,10 @@ func main() {
 
 	service.Init()
 
-	client := greeter.NewGreeterService("GreeterService1", service.Client())
-
+	client := greeter.NewGreeterService("GreeterService", service.Client())
+	fmt.Println("-")
 	// 访问server
-	rsp, err := client.Hello(context.Background(), &greeter.Request{Name: "Greeter.Hello111"})
+	rsp, err := client.Hello(context.Background(), &greeter.Request{Name: "fly Client"})
 	if err != nil {
 		fmt.Println(err)
 	} else {

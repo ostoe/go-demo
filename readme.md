@@ -91,6 +91,27 @@ sidercar部署过程：
 
 2. 在每个服务进程节点，每个节点生成两个配置：
 
+根据调用关系：
+_services["hashicups-db.name"]="hashicups-db"
+_services["hashicups-db.port"]="5432"
+_services["hashicups-db.checks"]="hashicups-db:localhost:5432"
+_services["hashicups-db.upstreams"]=""
+
+_services["hashicups-api.name"]="hashicups-api"
+_services["hashicups-api.port"]="8081"
+_services["hashicups-api.checks"]="hashicups-api.public:localhost:8081,hashicups-api.product:localhost:9090,hashicups-api.payments:localhost:8080"
+_services["hashicups-api.upstreams"]="hashicups-db:5432"
+
+_services["hashicups-frontend.name"]="hashicups-frontend"
+_services["hashicups-frontend.port"]="3000"
+_services["hashicups-frontend.checks"]="hashicups-frontend:localhost:3000"
+_services["hashicups-frontend.upstreams"]="hashicups-api:8081"
+
+_services["hashicups-nginx.name"]="hashicups-nginx"
+_services["hashicups-nginx.port"]="80"
+_services["hashicups-nginx.checks"]="hashicups-nginx:localhost:80"
+_services["hashicups-nginx.upstreams"]="hashicups-frontend:3000,hashicups-api:8081"
+
 svc.服务网格.hcl
 
 service {
@@ -189,6 +210,22 @@ optional：生成证书
 
 
 
+# k8s集群使用consul
+
+1. 安装集群kind，
+2. 使用helm安装consul，不仅仅是server进程，而且包含集群配置，自动注入sidecar到pod
+启动服务……正常启动，额外添加一些consul标注：
+```yml
+consul.hashicorp.com/connect-inject: "true"，启用代理注入
+consul.hashicorp.com/connect-service-upstreams: "frontend:3000, public-api:8080" 指定调用关系
+```
+3. 部署服务，正常部署就行，端口对应起来
+4. 安装consul api-gateway，定制CRD，与k8s集成的，类似于nginx ingress 
+5. 安装rbac，可以关联api调用权限
+6. 安装监控服务，以envoy proxy的形式存在
+
+![img](https://developer.hashicorp.com/_next/image?url=https%3A%2F%2Fcontent.hashicorp.com%2Fapi%2Fassets%3Fproduct%3Dtutorials%26version%3Dmain%26asset%3Dpublic%252Fimg%252Fconsul-splitting-architecture.png%26width%3D4561%26height%3D2914&w=3840&q=75)
 
 
+7. 流量拆分，做config.json配置，根据标签配置权重
 lua  http    nginx 进程    nginx.conf  
